@@ -1,0 +1,1 @@
+rootProject.name = "com.finflio.finflio-backend"
