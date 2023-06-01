@@ -1,8 +1,10 @@
 package com.finflio.plugins
 
 import com.finflio.controllers.AuthController
+import com.finflio.controllers.TransactionController
 import com.finflio.routes.AuthRoute
-import com.finflio.security.token.TokenConfig
+import com.finflio.routes.TransactionRoute
+import com.finflio.security.TokenConfig
 import io.ktor.server.application.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
@@ -13,6 +15,7 @@ fun Application.configureRouting() {
 
     val tokenConfig: TokenConfig by inject { parametersOf(this@configureRouting) }
     val authController: AuthController by inject { parametersOf(tokenConfig) }
+    val transactionController by inject<TransactionController>()
 
     routing {
         get("/") {
@@ -20,5 +23,7 @@ fun Application.configureRouting() {
         }
 
         AuthRoute(authController)
+        TransactionRoute(transactionController)
     }
+
 }
