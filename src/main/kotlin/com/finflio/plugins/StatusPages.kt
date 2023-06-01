@@ -30,6 +30,13 @@ fun Application.configureStatusPage() {
             )
         }
 
+        status(HttpStatusCode.MethodNotAllowed) { call, _ ->
+            call.respond(
+                HttpStatusCode.MethodNotAllowed,
+                FailureResponse(HttpStatusCode.MethodNotAllowed.value, "Method Not Allowed")
+            )
+        }
+
         exception<Throwable> { call, cause ->
             call.respond(
                 HttpStatusCode.InternalServerError,

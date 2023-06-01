@@ -16,11 +16,6 @@ data class AuthResponse(
             message
         )
 
-        fun unauthorized(message: String) = AuthResponse(
-            State.UNAUTHORIZED.value,
-            message
-        )
-
         fun success(token: String? = null, message: String) = AuthResponse(
             State.SUCCESS.value,
             message,

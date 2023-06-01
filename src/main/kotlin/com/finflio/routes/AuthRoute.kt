@@ -15,7 +15,7 @@ fun Route.AuthRoute(authController: AuthController) {
 
     route("/auth") {
         post("/register") {
-            val request = runCatching { call.receive<RegisterUserRequest>() }.getOrElse() {
+            val request = runCatching { call.receive<RegisterUserRequest>() }.getOrElse {
                 throw BadRequestException(FailureMessages.MESSAGE_MISSING_REGISTRATION_DATA)
             }
             val response = authController.register(request)
@@ -23,7 +23,7 @@ fun Route.AuthRoute(authController: AuthController) {
         }
 
         post("/login") {
-            val request = runCatching { call.receive<LoginRequest>() }.getOrElse() {
+            val request = runCatching { call.receive<LoginRequest>() }.getOrElse {
                 throw BadRequestException(FailureMessages.MESSAGE_MISSING_CREDENTIALS)
             }
             val response = authController.login(request)

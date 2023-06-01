@@ -2,6 +2,8 @@ package com.finflio.plugins
 
 import com.auth0.jwt.JWT
 import com.auth0.jwt.algorithms.Algorithm
+import com.finflio.security.JwtService.Companion.JWT_CLAIM
+import com.finflio.security.UserPrincipal
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
 import io.ktor.server.auth.jwt.*
@@ -21,7 +23,8 @@ fun Application.configureSecurity() {
                         .build()
                 )
                 validate { credential ->
-                    if (credential.payload.audience.contains(jwtAudience)) JWTPrincipal(credential.payload) else null
+                    val userId = credential.payload.getClaim(JWT_CLAIM)
+                    if (!userId.isMissing and !userId.isNull) UserPrincipal(userId.asString()) else null
                 }
             }
         }

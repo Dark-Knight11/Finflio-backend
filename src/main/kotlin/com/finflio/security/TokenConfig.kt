@@ -1,4 +1,4 @@
-package com.finflio.security.token
+package com.finflio.security
 
 data class TokenConfig(
     val issuer: String,

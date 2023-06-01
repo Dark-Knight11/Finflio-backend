@@ -3,10 +3,9 @@ package com.finflio.controllers
 import com.finflio.models.User
 import com.finflio.repository.AuthRepository
 import com.finflio.security.JwtService
+import com.finflio.security.TokenConfig
 import com.finflio.security.hashing.SHA256HashingService
 import com.finflio.security.hashing.SaltedHash
-import com.finflio.security.token.TokenClaim
-import com.finflio.security.token.TokenConfig
 import com.finflio.utils.exceptions.FailureMessages
 import com.finflio.utils.exceptions.RequestConflictException
 import com.finflio.utils.requests.LoginRequest
@@ -59,7 +58,7 @@ class AuthController(
         }
         val token = tokenService.generateToken(
             config = tokenConfig,
-            TokenClaim(name = "userId", value = user.id.toString())
+            userId = user.id.toString()
         )
 
         return AuthResponse.success(token, "Login Successful")
