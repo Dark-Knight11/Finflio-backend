@@ -11,6 +11,7 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.time.Month
 
 fun Route.TransactionRoute(transactionController: TransactionController) {
 
@@ -64,7 +65,38 @@ fun Route.TransactionRoute(transactionController: TransactionController) {
                 val principal =
                     call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
 
-                val response = transactionController.getAllTransactions(principal.userId)
+                val month = call.parameters["month"]
+                val page = call.parameters["page"] ?: kotlin.run {
+                    throw BadRequestException("Page no is missing")
+                }
+
+                if (month != null) {
+                    val response = transactionController.getFilteredTransaction(
+                        Month.valueOf(month),
+                        principal.userId,
+                        page.toInt()
+                    )
+                    call.respond(HttpStatusCode.OK, response)
+                } else {
+                    val response = transactionController.getAllTransactions(principal.userId, page.toInt())
+                    call.respond(HttpStatusCode.OK, response)
+                }
+            }
+
+            get("/stats") {
+                val principal =
+                    call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
+                val response = transactionController.getStats(principal.userId)
+                call.respond(HttpStatusCode.OK, response)
+            }
+
+            post("/all") {
+                val request = runCatching { call.receive<List<TransactionRequest>>() }.getOrElse {
+                    throw BadRequestException(FailureMessages.MESSAGE_TRANSACTION_DETAILS_MISSING)
+                }
+                val principal =
+                    call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
+                val response = transactionController.postAll(request, principal.userId)
                 call.respond(HttpStatusCode.OK, response)
             }
         }

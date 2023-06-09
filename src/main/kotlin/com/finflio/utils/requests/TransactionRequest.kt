@@ -4,7 +4,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class TransactionRequest(
-    val timestamp: String,
+    val timestamp: Long,
     val type: String,
     val category: String,
     val paymentMethod: String,

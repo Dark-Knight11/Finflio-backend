@@ -59,6 +59,7 @@ dependencies {
 
     // Kmongo
     implementation("org.litote.kmongo:kmongo-coroutine:$kmongo_version")
+    implementation("org.litote.kmongo:kmongo-async:$kmongo_version")
 
     // Koin for Ktor
     implementation("io.insert-koin:koin-ktor:$koin_ktor")
