@@ -1,6 +1,6 @@
 package com.finflio.plugins
 
-import com.finflio.models.ObjectIDSerializer
+import com.finflio.data.ObjectIDSerializer
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.plugins.contentnegotiation.*
