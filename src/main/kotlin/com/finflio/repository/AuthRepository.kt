@@ -1,6 +1,6 @@
 package com.finflio.repository
 
-import com.finflio.models.User
+import com.finflio.data.models.User
 import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.eq
 
