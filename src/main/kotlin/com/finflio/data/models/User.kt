@@ -1,4 +1,4 @@
-package com.finflio.models
+package com.finflio.data.models
 
 import org.bson.codecs.pojo.annotations.BsonId
 import org.bson.types.ObjectId
