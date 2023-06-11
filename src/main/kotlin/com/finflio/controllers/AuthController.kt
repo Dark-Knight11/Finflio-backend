@@ -17,24 +17,31 @@ class AuthController(
     private val hashingService: SHA256HashingService,
     private val tokenService: JwtService,
     private val tokenConfig: TokenConfig
-): ControllerUtils() {
+) : ControllerUtils() {
     suspend fun register(request: RegisterUserRequest): AuthResponse {
         validateSignUpCredentialsOrThrowException(request)
 
-        val saltedHash = hashingService.generateHash(request.password)
-        val user = User(
-            email = request.email,
-            password = saltedHash.hash,
-            name = request.name,
-            salt = saltedHash.salt
-        )
+        val userExist = authRepository.findUserByEmail(request.email)
 
-        val wasAcknowledged = authRepository.createUser(user = user)
-        if (!wasAcknowledged) {
-            return AuthResponse.failed("Error Creating the user")
+        return if (userExist == null) {
+
+            val saltedHash = hashingService.generateHash(request.password)
+            val user = User(
+                email = request.email,
+                password = saltedHash.hash,
+                name = request.name,
+                salt = saltedHash.salt
+            )
+
+            val wasAcknowledged = authRepository.createUser(user = user)
+            if (!wasAcknowledged) {
+                return AuthResponse.failed("Error Creating the user")
+            }
+
+            AuthResponse.success(message = "Registration Successful")
+        } else {
+            AuthResponse.failed(message = "User Exist Already")
         }
-
-        return AuthResponse.success(message = "Registration Successful")
     }
 
 
