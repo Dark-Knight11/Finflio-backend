@@ -67,7 +67,8 @@ class TransactionController(
         return if (response.first.isNotEmpty()) TransactionsResponse.success(
             response.first,
             "Successful",
-            response.second
+            response.second,
+            response.third
         )
         else TransactionsResponse.failed("No Transactions")
     }

@@ -7,8 +7,9 @@ import kotlinx.serialization.Serializable
 class TransactionsResponse(
     override val status: Int,
     override val message: String,
+    val monthTotal: Int = 0,
     val transactions: List<Transaction> = emptyList(),
-    val totalPages: Int = 0
+    val totalPages: Int = 0,
 ) : BaseResponse {
 
     companion object {
@@ -18,9 +19,15 @@ class TransactionsResponse(
             message
         )
 
-        fun success(transactions: List<Transaction>, message: String, pageCount: Int) = TransactionsResponse(
+        fun success(
+            transactions: List<Transaction>,
+            message: String,
+            pageCount: Int,
+            monthTotal: Int = 0
+        ) = TransactionsResponse(
             State.SUCCESS.value,
             message,
+            monthTotal,
             transactions,
             pageCount
         )

@@ -57,30 +57,73 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
         userId: String,
         pageNo: Int,
         size: Int = 10
-    ): Pair<List<Transaction>, Int> {
+    ): Triple<List<Transaction>, Int, Int> {
         val currentYear = LocalDateTime.now().year // TODO() take user input for year
         val (startDate, endDate) = getStartAndEndTimestamps(currentYear, month.value)
 
-        val count = transactions.aggregate<Transaction>(
-            match(Transaction::userId eq ObjectId(userId)),
-            match(
-                Transaction::timestamp gte startDate,
-                Transaction::timestamp lte endDate
-            )
-        ).toList().size
+        val query = """[
+          {
+            ${'$'}match: {
+              ${'$'}and: [
+                {
+                  ${'$'}expr: {
+                    ${'$'}eq: [
+                      "${'$'}userId",
+                      {
+                        ${'$'}toObjectId: "$userId",
+                      },
+                    ],
+                  },
+                },
+                {
+                  timestamp: {
+                    ${'$'}gte: $startDate,
+                    ${'$'}lte: $endDate,
+                  },
+                },
+              ],
+            },
+          },
+          {
+            ${'$'}group: {
+              _id: null,
+              monthTotal: {
+                ${'$'}sum: {
+                  ${'$'}cond: [
+                    {
+                      ${'$'}type: "Expense",
+                    },
+                    "${'$'}amount",
+                    0,
+                  ],
+                },
+              },
+              total: {
+                ${'$'}count: {},
+              },
+            }
+          }
+        ]""".trimIndent()
+
+        val totalList = transactions.aggregate<TotalList>(query).first()
+
+        val count = totalList?.total ?: 0
+        val monthTotal = totalList?.monthTotal ?: 0
 
         val totalPages = ceil(count.fdiv(size)).toInt()
 
-        return transactions.aggregate<Transaction>(
-            match(Transaction::userId eq ObjectId(userId)),
-            match(
-                Transaction::timestamp gte startDate,
-                Transaction::timestamp lte endDate
-            ),
-            skip((pageNo - 1) * size),
-            limit(size),
-            sort(ascending(Transaction::timestamp))
-        ).toList() to totalPages
+        return Triple(
+            transactions.aggregate<Transaction>(
+                match(Transaction::userId eq ObjectId(userId)),
+                match(
+                    Transaction::timestamp gte startDate,
+                    Transaction::timestamp lte endDate
+                ),
+                skip((pageNo - 1) * size),
+                limit(size),
+                sort(ascending(Transaction::timestamp))
+            ).toList(), totalPages, monthTotal
+        )
     }
 
     /**
@@ -363,3 +406,8 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
         return transactionsList to count.toInt()
     }
 }
+
+data class TotalList(
+    val monthTotal: Int,
+    val total: Int? = 0
+)
