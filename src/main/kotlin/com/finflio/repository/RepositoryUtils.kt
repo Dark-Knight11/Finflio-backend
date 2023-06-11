@@ -1,11 +1,17 @@
 package com.finflio.repository
 
 import com.fasterxml.jackson.annotation.JsonFormat
+import com.finflio.data.models.Stats
+import com.finflio.data.models.StatsData
 import com.finflio.data.models.Transaction
+import io.ktor.server.util.*
+import io.ktor.util.*
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.YearMonth
 import java.time.ZoneOffset
+import java.time.format.DateTimeFormatter
 import java.time.temporal.WeekFields
 import java.util.*
 
@@ -54,5 +60,69 @@ open class RepositoryUtils {
             .toEpochMilli()
 
         return startOfWeek to endOfWeek
+    }
+
+    @OptIn(InternalAPI::class)
+    protected fun getMissingData(
+        startOfWeek: Long,
+        endOfWeek: Long,
+        startDate: Long,
+        endDate: Long,
+        startOfYear: Long,
+        endOfYear: Long,
+        data: Stats?
+    ): Stats? {
+        val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.FRANCE)
+
+        val allWeekDates = generateSequence(startOfWeek) {
+            it.plus(24 * 60 * 60 * 1000)
+        }
+            .takeWhile { it <= endOfWeek }
+            .toList()
+
+        val missingWeekDates = allWeekDates.map { formatter.format(Date(it)) }
+            .filterNot { date ->
+                data?.weeklyData?.any { it.date == date } == true
+            }
+
+        val allMonthDates = generateSequence(startDate) {
+            it.plus(24 * 60 * 60 * 1000)
+        }
+            .takeWhile { it <= endDate }
+            .toList()
+
+        val missingMonthDates = allMonthDates.map { formatter.format(Date(it)) }
+            .filterNot { date ->
+                data?.monthlyData?.any { it.date == date } == true
+            }
+
+        val allMonths = generateSequence(Date(startOfYear).toLocalDateTime().toLocalDate()) {
+            it.plusMonths(1)
+        }.takeWhile { it <= Date(endOfYear).toLocalDateTime().toLocalDate() }
+            .toList()
+
+        val yearDataFormatter = DateTimeFormatter.ofPattern("yyyy-MM")
+
+        val missingMonths = allMonths.map { it.format(yearDataFormatter) }
+            .filterNot { date ->
+                data?.yearlyData?.any { it.date == date } == true
+            }
+
+
+        val defaultData = StatsData(0, 0, "")
+
+        val updatedWeeklyData =
+            data?.weeklyData?.plus(missingWeekDates.map { defaultData.copy(date = it) })?.sortedBy { it.date }
+        val updatedMonthlyData =
+            data?.monthlyData?.plus(missingMonthDates.map { defaultData.copy(date = it) })?.sortedBy { it.date }
+        val updatedYearlyData =
+            data?.yearlyData?.plus(missingMonths.map { defaultData.copy(date = it) })?.sortedBy { it.date }
+
+
+        return data?.copy(
+            weeklyData = updatedWeeklyData ?: emptyList(),
+            monthlyData = updatedMonthlyData ?: emptyList(),
+            yearlyData = updatedYearlyData ?: emptyList()
+        )
     }
 }

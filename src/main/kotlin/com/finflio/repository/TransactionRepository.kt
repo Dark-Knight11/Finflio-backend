@@ -83,12 +83,36 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
         ).toList() to totalPages
     }
 
+    /**
+     * Retrieves the statistical data (weekly, monthly, yearly) for a given user.
+     * @param userId The unique identifier of the user.
+     * @return The statistical data for the user, or null if no data is available.
+     */
     suspend fun getStats(userId: String): Stats? {
         val currentDate = LocalDateTime.now() // TODO() take user input for year
         val (startOfWeek, endOfWeek) = getCurrentWeekDates(currentDate)
         val (startOfYear, endOfYear) = getCurrentYearDates(currentDate.year)
         val (startDate, endDate) = getStartAndEndTimestamps(currentDate.year, currentDate.monthValue)
 
+
+        /**
+         * This query is written in the MongoDB Aggregation Framework syntax and is used to retrieve statistical data (weekly, monthly, yearly) for a given user.
+         *
+         * The query starts with a `$match` stage, which filters the documents based on the `userId` field. It uses the `$expr` operator to compare the `userId` field with the provided `userId` value.
+         *
+         * The main part of the query is the `$facet` stage, which allows multiple pipelines to be executed within a single aggregation stage. It defines three facets: `weeklyData`, `monthlyData`, and `yearlyData`.
+         *
+         * For each facet, there are several stages that perform specific operations on the data:
+         *
+         * 1. The `$match` stage filters the documents based on the type (`Expense` or `Income`) and the timestamp range (`startOfWeek` and `endOfWeek` for `weeklyData`, `startDate` and `endDate` for `monthlyData`, and `startOfYear` and `endOfYear` for `yearlyData`).
+         * 2. The `$group` stage groups the documents by the formatted date (`_id`) using the `$dateToString` operator. It also calculates the sum of the daily income and expense based on the type.
+         * 3. The `$project` stage reshapes the output by excluding the `_id` field and including the `date`, `totalDailyIncome`, and `totalDailyExpense` fields.
+         * 4. The `$sort` stage sorts the documents by the `date` field in ascending order.
+         *
+         * The result of the query is an array containing three sets of statistical data: `weeklyData`, `monthlyData`, and `yearlyData`. Each set includes an array of documents with the fields `date`, `totalDailyIncome`, and `totalDailyExpense`.
+         *
+         * The query uses various MongoDB aggregation operators and functions, such as `$match`, `$facet`, `$group`, `$project`, `$sort`, `$expr`, `$eq`, `$in`, `$gte`, `$lte`, `$cond`, `$sum`, `$toDate`, and `$dateToString`, to perform filtering, grouping, projection, sorting, and date manipulation operations.
+         */
         val query = """[
           {
             ${'$'}match: {
@@ -100,104 +124,220 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
             }
           }
           {
-            ${'$'}group: {
-              _id: null,
-              totalIncomeWeekly: {
-                ${'$'}sum: {
-                  ${'$'}cond: [
-                    {
+            ${'$'}facet: {
+                weeklyData: [
+                  {
+                    ${'$'}match: {
                       ${'$'}and: [
-                        {${'$'}eq: ["${'$'}type", "Income"]},
-                        {"${'$'}gte": ["${'$'}timestamp", $startOfWeek]},
-                        {"${'$'}lte": ["${'$'}timestamp", $endOfWeek]}
-                      ]
+                        {
+                          type: {
+                            ${'$'}in: ["Expense", "Income"],
+                          },
+                        },
+                        {
+                          timestamp: {
+                            ${'$'}gte: $startOfWeek,
+                            ${'$'}lte: $endOfWeek,
+                          },
+                        },
+                      ],
                     },
-                    "${'$'}amount",
-                    0
-                  ]
-                }
+                  },
+                  {
+                    ${'$'}group: {
+                      _id: {
+                        ${'$'}dateToString: {
+                          format: "%Y-%m-%d",
+                          date: {
+                            ${'$'}toDate: "${'$'}timestamp",
+                          },
+                        },
+                      },
+                      totalDailyIncome: {
+                        ${'$'}sum: {
+                          ${'$'}cond: [
+                            {
+                              ${'$'}eq: ["${'$'}type", "Income"],
+                            },
+                            "${'$'}amount",
+                            0,
+                          ],
+                        },
+                      },
+                      totalDailyExpense: {
+                        ${'$'}sum: {
+                          ${'$'}cond: [
+                            {
+                              ${'$'}eq: ["${'$'}type", "Expense"],
+                            },
+                            "${'$'}amount",
+                            0,
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  {
+                    ${'$'}project: {
+                      _id: 0,
+                      date: "${'$'}_id",
+                      totalDailyIncome: 1,
+                      totalDailyExpense: 1,
+                    },
+                  },
+                  {
+                    ${'$'}sort: {
+                      date: 1,
+                    },
+                  },
+                ],
+                monthlyData: [
+                  {
+                    ${'$'}match: {
+                      ${'$'}and: [
+                        {
+                          type: {
+                            ${'$'}in: ["Expense", "Income"],
+                          },
+                        },
+                        {
+                          timestamp: {
+                            ${'$'}gte: $startDate,
+                            ${'$'}lte: $endDate,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    ${'$'}group: {
+                      _id: {
+                        ${'$'}dateToString: {
+                          format: "%Y-%m-%d",
+                          date: {
+                            ${'$'}toDate: "${'$'}timestamp",
+                          },
+                        },
+                      },
+                      totalDailyIncome: {
+                        ${'$'}sum: {
+                          ${'$'}cond: [
+                            {
+                              ${'$'}eq: ["${'$'}type", "Income"],
+                            },
+                            "${'$'}amount",
+                            0,
+                          ],
+                        },
+                      },
+                      totalDailyExpense: {
+                        ${'$'}sum: {
+                          ${'$'}cond: [
+                            {
+                              ${'$'}eq: ["${'$'}type", "Expense"],
+                            },
+                            "${'$'}amount",
+                            0,
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  {
+                    ${'$'}project: {
+                      _id: 0,
+                      date: "${'$'}_id",
+                      totalDailyIncome: 1,
+                      totalDailyExpense: 1,
+                    },
+                  },
+                  {
+                    ${'$'}sort: {
+                      date: 1,
+                    },
+                  },
+                ],
+                yearlyData: [
+                  {
+                    ${'$'}match: {
+                      ${'$'}and: [
+                        {
+                          type: {
+                            ${'$'}in: ["Expense", "Income"],
+                          },
+                        },
+                        {
+                          timestamp: {
+                            ${'$'}gte: $startOfYear,
+                            ${'$'}lte: $endOfYear,
+                          },
+                        },
+                      ],
+                    },
+                  },
+                  {
+                    ${'$'}group: {
+                      _id: {
+                        ${'$'}dateToString: {
+                          format: "%Y-%m",
+                          date: {
+                            ${'$'}toDate: "${'$'}timestamp",
+                          },
+                        },
+                      },
+                      totalDailyIncome: {
+                        ${'$'}sum: {
+                          ${'$'}cond: [
+                            {
+                              ${'$'}eq: ["${'$'}type", "Income"],
+                            },
+                            "${'$'}amount",
+                            0,
+                          ],
+                        },
+                      },
+                      totalDailyExpense: {
+                        ${'$'}sum: {
+                          ${'$'}cond: [
+                            {
+                              ${'$'}eq: ["${'$'}type", "Expense"],
+                            },
+                            "${'$'}amount",
+                            0,
+                          ],
+                        },
+                      },
+                    },
+                  },
+                  {
+                    ${'$'}project: {
+                      _id: 0,
+                      date: "${'$'}_id",
+                      totalDailyIncome: 1,
+                      totalDailyExpense: 1,
+                    },
+                  },
+                  {
+                    ${'$'}sort: {
+                      date: 1,
+                    },
+                  },
+                ],
               },
-              totalIncomeMonthly: {
-                ${'$'}sum: {
-                  ${'$'}cond: [
-                    {
-                      ${'$'}and: [
-                        {${'$'}eq: ["${'$'}type", "Income"]},
-                        {"${'$'}gte": ["${'$'}timestamp", $startDate]},
-                        {"${'$'}lte": ["${'$'}timestamp", $endDate]}
-                      ]
-                    },
-                    "${'$'}amount",
-                    0
-                  ]
-                }
-              },
-              totalIncomeYearly: {
-                ${'$'}sum: {
-                  ${'$'}cond: [
-                    {
-                      ${'$'}and: [
-                        {${'$'}eq: ["${'$'}type", "Income"]},
-                        {"${'$'}gte": ["${'$'}timestamp", $startOfYear]},
-                        {"${'$'}lte": ["${'$'}timestamp", $endOfYear]}
-                      ]
-                    },
-                    "${'$'}amount",
-                    0
-                  ]
-                }
-              },
-              totalExpenseWeekly: {
-                ${'$'}sum: {
-                  ${'$'}cond: [
-                    {
-                      ${'$'}and: [
-                        {${'$'}eq: ["${'$'}type", "Expense"]},
-                        {"${'$'}gte": ["${'$'}timestamp", $startOfWeek]},
-                        {"${'$'}lte": ["${'$'}timestamp", $endOfWeek]}
-                      ]
-                    },
-                    "${'$'}amount",
-                    0
-                  ]
-                }
-              },
-              totalExpenseMonthly: {
-                ${'$'}sum: {
-                  ${'$'}cond: [
-                    {
-                      ${'$'}and: [
-                        {${'$'}eq: ["${'$'}type", "Expense"]},
-                        {"${'$'}gte": ["${'$'}timestamp", $startDate]},
-                        {"${'$'}lte": ["${'$'}timestamp", $endDate]}
-                      ]
-                    },
-                    "${'$'}amount",
-                    0
-                  ]
-                }
-              },
-              totalExpenseYearly: {
-                ${'$'}sum: {
-                  ${'$'}cond: [
-                    {
-                      ${'$'}and: [
-                        {${'$'}eq: ["${'$'}type", "Expense"]},
-                        {"${'$'}gte": ["${'$'}timestamp", $startOfYear]},
-                        {"${'$'}lte": ["${'$'}timestamp", $endOfYear]}
-                      ]
-                    },
-                    "${'$'}amount",
-                    0
-                  ]
-                }
-              }
-            }
           }
         ]""".trimIndent()
 
-        return transactions.aggregate<Stats>(query).first()
+        val data = transactions.aggregate<Stats>(query).first()
 
+        return getMissingData(
+            startOfWeek,
+            endOfWeek,
+            startDate,
+            endDate,
+            startOfYear,
+            endOfYear,
+            data
+        )
     }
 
     suspend fun postAll(transactionsList: List<Transaction>): Boolean =
