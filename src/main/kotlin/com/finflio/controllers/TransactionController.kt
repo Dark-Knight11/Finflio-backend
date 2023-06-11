@@ -18,7 +18,7 @@ class TransactionController(
         val transaction = transactionRequest.toTransaction(userId)
         val response = repository.createTransaction(transaction)
         response?.let {
-            return TransactionResponse.success(response, "Successful")
+            return TransactionResponse.created(response, "Successful")
         }
         return TransactionResponse.failed(FailureMessages.MESSAGE_FAILED)
     }
@@ -28,7 +28,7 @@ class TransactionController(
         response?.let {
             return TransactionResponse.success(response, "Successful")
         }
-        return TransactionResponse.failed(FailureMessages.MESSAGE_FAILED)
+        return TransactionResponse.failed(FailureMessages.MESSAGE_TRANSACTION_NOT_FOUND)
     }
 
     suspend fun updateTransaction(

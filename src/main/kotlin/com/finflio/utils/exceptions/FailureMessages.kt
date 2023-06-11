@@ -8,4 +8,5 @@ object FailureMessages {
     const val MESSAGE_FAILED = "Something went wrong!"
 
     const val MESSAGE_TRANSACTION_DETAILS_MISSING = "Invalid Transaction"
+    const val MESSAGE_TRANSACTION_NOT_FOUND = "Transaction not Found. Invalid ID"
 }

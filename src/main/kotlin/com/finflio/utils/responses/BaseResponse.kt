@@ -9,6 +9,7 @@ interface BaseResponse {
 
 enum class State(val value: Int) {
     SUCCESS(HttpStatusCode.OK.value),
+    CREATED(HttpStatusCode.Created.value),
     NOT_FOUND(HttpStatusCode.NotFound.value),
     FAILED(HttpStatusCode.BadRequest.value),
     CONFLICT(HttpStatusCode.Conflict.value),

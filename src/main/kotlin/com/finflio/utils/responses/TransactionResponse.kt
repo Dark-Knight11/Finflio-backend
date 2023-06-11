@@ -22,6 +22,12 @@ class TransactionResponse(
             message,
             transaction
         )
+
+        fun created(transaction: Transaction? = null, message: String) = TransactionResponse(
+            State.CREATED.value,
+            message,
+            transaction
+        )
     }
 }
 

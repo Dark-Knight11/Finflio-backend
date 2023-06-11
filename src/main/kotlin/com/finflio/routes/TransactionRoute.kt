@@ -25,7 +25,7 @@ fun Route.TransactionRoute(transactionController: TransactionController) {
                     call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
 
                 val response = transactionController.createTransaction(request, principal.userId)
-                call.respond(HttpStatusCode.OK, response)
+                call.respond(HttpStatusCode.Created, response)
             }
 
             get {
