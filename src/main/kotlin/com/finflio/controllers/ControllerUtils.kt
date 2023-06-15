@@ -112,9 +112,9 @@ open class ControllerUtils {
         }
 
         // Check if the from and to fields are mutually exclusive
-        if (transaction.from != null && transaction.to != null) {
+        if (!transaction.from.isNullOrBlank() && !transaction.to.isNullOrBlank()) {
             throw RequestConflictException("From and to fields are mutually exclusive")
-        } else if (transaction.from == null && transaction.to == null) {
+        } else if (transaction.from.isNullOrBlank() && transaction.to.isNullOrBlank()) {
             throw RequestConflictException("One of the from and to fields must be filled")
         }
 
