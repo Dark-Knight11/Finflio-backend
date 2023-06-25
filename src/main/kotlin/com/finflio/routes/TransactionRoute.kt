@@ -4,6 +4,7 @@ import com.finflio.controllers.TransactionController
 import com.finflio.security.UserPrincipal
 import com.finflio.utils.exceptions.FailureMessages
 import com.finflio.utils.requests.TransactionRequest
+import com.finflio.utils.responses.State
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.auth.*
@@ -65,22 +66,36 @@ fun Route.TransactionRoute(transactionController: TransactionController) {
                 val principal =
                     call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
 
-                val month = call.parameters["month"]
+                val month = call.parameters["month"] ?: kotlin.run {
+                    throw BadRequestException("Month is missing")
+                }
                 val page = call.parameters["page"] ?: kotlin.run {
                     throw BadRequestException("Page no is missing")
                 }
+                val response = transactionController.getFilteredTransaction(
+                    Month.valueOf(month),
+                    principal.userId,
+                    page.toInt()
+                )
+                if (response.status == State.NOT_FOUND.value)
+                    call.respond(HttpStatusCode.NotFound, response)
+                else
+                    call.respond(HttpStatusCode.OK, response)
+            }
 
-                if (month != null) {
-                    val response = transactionController.getFilteredTransaction(
-                        Month.valueOf(month),
-                        principal.userId,
-                        page.toInt()
-                    )
-                    call.respond(HttpStatusCode.OK, response)
-                } else {
-                    val response = transactionController.getAllTransactions(principal.userId, page.toInt())
-                    call.respond(HttpStatusCode.OK, response)
+            get("/unsettled") {
+                val principal =
+                    call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
+
+                println(principal)
+                val page = call.parameters["page"] ?: kotlin.run {
+                    throw BadRequestException("Page no is missing")
                 }
+                val response = transactionController.getUnsettledTransactions(principal.userId, page.toInt())
+                if (response.status == State.NOT_FOUND.value)
+                    call.respond(HttpStatusCode.NotFound, response)
+                else
+                    call.respond(HttpStatusCode.OK, response)
             }
 
             get("/stats") {

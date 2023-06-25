@@ -31,24 +31,30 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
     suspend fun deleteTransaction(id: String): Boolean =
         transactions.deleteOneById(ObjectId(id)).wasAcknowledged()
 
-    suspend fun getAllTransactions(
+    suspend fun getUnsettledTransactions(
         userId: String,
         pageNo: Int,
         size: Int = 10
     ): Pair<List<Transaction>, Int> {
         transactions.find(Transaction::userId eq ObjectId(userId)).toList()
         val count = transactions.aggregate<Transaction>(
-            match(Transaction::userId eq ObjectId(userId))
+            match(
+                Transaction::userId eq ObjectId(userId),
+                Transaction::type eq "Unsettled"
+            )
         ).toList().size
 
         val totalPages = ceil(count.fdiv(size)).toInt()
 
-        return transactions
-            .find(Transaction::userId eq ObjectId(userId))
-            .skip((pageNo - 1) * size)
-            .limit(size)
-            .sort(ascending(Transaction::timestamp))
-            .toList() to totalPages
+        return transactions.aggregate<Transaction>(
+            match(
+                Transaction::userId eq ObjectId(userId),
+                Transaction::type eq "Unsettled"
+            ),
+            sort(descending(Transaction::timestamp)),
+            skip((pageNo - 1) * size),
+            limit(size)
+        ).toList() to totalPages
     }
 
 
@@ -76,6 +82,13 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
                   },
                 },
                 {
+                  ${'$'}expr: {
+                    ${'$'}ne: [
+                      "${'$'}type", "Unsettled"
+                    ],
+                  },
+                },
+                {
                   timestamp: {
                     ${'$'}gte: $startDate,
                     ${'$'}lte: $endDate,
@@ -90,8 +103,8 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
               monthTotal: {
                 ${'$'}sum: {
                   ${'$'}cond: [
-                    {
-                      ${'$'}type: "Expense",
+                    { 
+                      ${'$'}eq: [ "${'$'}type", "Expense" ]
                     },
                     "${'$'}amount",
                     0,
@@ -114,14 +127,17 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
 
         return Triple(
             transactions.aggregate<Transaction>(
-                match(Transaction::userId eq ObjectId(userId)),
+                match(
+                    Transaction::userId eq ObjectId(userId),
+                    Transaction::type ne "Unsettled"
+                ),
                 match(
                     Transaction::timestamp gte startDate,
                     Transaction::timestamp lte endDate
                 ),
+                sort(descending(Transaction::timestamp)),
                 skip((pageNo - 1) * size),
-                limit(size),
-                sort(ascending(Transaction::timestamp))
+                limit(size)
             ).toList(), totalPages, monthTotal
         )
     }

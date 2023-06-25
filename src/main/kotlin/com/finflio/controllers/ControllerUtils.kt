@@ -26,7 +26,7 @@ open class ControllerUtils {
     protected fun validateLoginCredentialsOrThrowException(request: LoginRequest) {
         with(request) {
             val message = when {
-                (email.isBlank() or password.isBlank() or password.isBlank()) -> "email and password should not be blank"
+                (email.isBlank() or password.isBlank()) -> "email and password should not be blank"
                 (password.length !in (8..50)) -> "Password should be of min 8 and max 50 character in length"
                 (!Pattern.matches(EMAIL_REGEX, email)) -> "Invalid Email"
                 else -> return
@@ -82,7 +82,7 @@ open class ControllerUtils {
         // Check if the type is one of the allowed values
         if (transaction.type.isEmpty()) {
             throw RequestConflictException("Type cannot be empty")
-        } else if (!listOf("Expense", "Income", "Unsettled Transaction").contains(transaction.type)) {
+        } else if (!listOf("Expense", "Income", "Unsettled").contains(transaction.type)) {
             throw RequestConflictException("Type must be one of the following: Expense, Income, Unsettled Transaction")
         }
 

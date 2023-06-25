@@ -9,12 +9,13 @@ plugins {
     kotlin("jvm") version "1.8.21"
     id("io.ktor.plugin") version "2.3.0"
     id("org.jetbrains.kotlin.plugin.serialization") version "1.8.21"
+    id("org.jetbrains.dokka") version "1.8.20"
 }
 
 group = "com.finflio"
 version = "0.0.1"
 application {
-    mainClass.set("io.ktor.server.netty.EngineMain")
+    mainClass.set("com.finflio.ApplicationKt")
 
     val isDevelopment: Boolean = project.ext.has("development")
     applicationDefaultJvmArgs = listOf("-Dio.ktor.development=$isDevelopment")

@@ -52,8 +52,8 @@ class TransactionController(
         else TransactionResponse.failed(FailureMessages.MESSAGE_FAILED)
     }
 
-    suspend fun getAllTransactions(userId: String, pageNo: Int): TransactionsResponse {
-        val response = repository.getAllTransactions(userId, pageNo)
+    suspend fun getUnsettledTransactions(userId: String, pageNo: Int): TransactionsResponse {
+        val response = repository.getUnsettledTransactions(userId, pageNo)
         return if (response.first.isNotEmpty()) TransactionsResponse.success(
             response.first,
             "Successful",

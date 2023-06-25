@@ -15,7 +15,7 @@ class TransactionsResponse(
     companion object {
 
         fun failed(message: String) = TransactionsResponse(
-            State.FAILED.value,
+            State.NOT_FOUND.value,
             message
         )
 
