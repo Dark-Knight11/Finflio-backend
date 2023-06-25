@@ -36,21 +36,16 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
         pageNo: Int,
         size: Int = 10
     ): Pair<List<Transaction>, Int> {
-        transactions.find(Transaction::userId eq ObjectId(userId)).toList()
         val count = transactions.aggregate<Transaction>(
-            match(
-                Transaction::userId eq ObjectId(userId),
-                Transaction::type eq "Unsettled"
-            )
+            match(Transaction::type eq "Unsettled"),
+            match(Transaction::userId eq ObjectId(userId)),
         ).toList().size
 
         val totalPages = ceil(count.fdiv(size)).toInt()
 
         return transactions.aggregate<Transaction>(
-            match(
-                Transaction::userId eq ObjectId(userId),
-                Transaction::type eq "Unsettled"
-            ),
+            match(Transaction::type eq "Unsettled"),
+            match(Transaction::userId eq ObjectId(userId)),
             sort(descending(Transaction::timestamp)),
             skip((pageNo - 1) * size),
             limit(size)
