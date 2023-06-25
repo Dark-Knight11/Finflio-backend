@@ -14,8 +14,8 @@ val authModule = module {
 
 private fun provideTokenConfig(environment: ApplicationEnvironment): TokenConfig {
     return TokenConfig(
-        issuer = environment.config.property("jwt.domain").getString(),
-        audience = environment.config.property("jwt.audience").getString(),
+        issuer = System.getenv("JWT_Domain"),
+        audience = System.getenv("JWT_Audience"),
         expiresIn = 30L * 24L * 60L * 60L * 1000L, // 30 days
         secret = System.getenv("JWT_SECRET")
     )
