@@ -69,6 +69,9 @@ dependencies {
 
     // Hashing
     implementation("commons-codec:commons-codec:$commons_codec_version")
+
+    // Cloudinary
+    implementation("com.cloudinary:cloudinary-http45:1.33.0")
 }
 
 tasks.withType<Jar> {

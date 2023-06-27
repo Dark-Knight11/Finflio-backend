@@ -107,7 +107,7 @@ open class ControllerUtils {
         }
 
         // Check if the attachment is a cloudinary url
-        if (transaction.attachment != null && !transaction.attachment.startsWith("https://res.cloudinary.com/")) {
+        if (!transaction.attachment.isNullOrBlank() && transaction.attachment != "null" && !transaction.attachment.startsWith("https://res.cloudinary.com/")) {
             throw RequestConflictException("Attachment must be a cloudinary url")
         }
 

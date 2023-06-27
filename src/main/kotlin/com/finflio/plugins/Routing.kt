@@ -1,5 +1,6 @@
 package com.finflio.plugins
 
+import com.cloudinary.Cloudinary
 import com.finflio.controllers.AuthController
 import com.finflio.controllers.TransactionController
 import com.finflio.routes.AuthRoute
@@ -9,10 +10,14 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import org.koin.ktor.ext.inject
 
-fun Application.configureRouting() {
+fun Application.configureRouting(cloudinary: Cloudinary) {
 
     val authController by inject<AuthController>()
     val transactionController by inject<TransactionController>()
+    var fileDescription = ""
+    var fileName = ""
+    var tempFilePath: String? = null
+    val map = HashMap<String, String>()
 
     routing {
         get("/") {
@@ -20,7 +25,7 @@ fun Application.configureRouting() {
         }
 
         AuthRoute(authController)
-        TransactionRoute(transactionController)
+        TransactionRoute(transactionController, cloudinary)
     }
 
 }
