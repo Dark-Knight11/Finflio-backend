@@ -14,10 +14,6 @@ fun Application.configureRouting(cloudinary: Cloudinary) {
 
     val authController by inject<AuthController>()
     val transactionController by inject<TransactionController>()
-    var fileDescription = ""
-    var fileName = ""
-    var tempFilePath: String? = null
-    val map = HashMap<String, String>()
 
     routing {
         get("/") {
