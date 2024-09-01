@@ -10,6 +10,7 @@ import org.litote.kmongo.coroutine.CoroutineDatabase
 import org.litote.kmongo.coroutine.aggregate
 import java.time.LocalDateTime
 import java.time.Month
+import java.time.Year
 import kotlin.math.ceil
 
 class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
@@ -55,12 +56,12 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
 
     suspend fun getFilteredTransaction(
         month: Month,
+        year: Year,
         userId: String,
         pageNo: Int,
         size: Int = 10
     ): Triple<List<Transaction>, Int, Int> {
-        val currentYear = LocalDateTime.now().year // TODO() take user input for year
-        val (startDate, endDate) = getStartAndEndTimestamps(currentYear, month.value)
+        val (startDate, endDate) = getStartAndEndTimestamps(year.value, month.value)
 
         val query = """[
           {
@@ -415,6 +416,10 @@ class TransactionRepository(db: CoroutineDatabase) : RepositoryUtils() {
         val transactionsList = result?.transactions ?: emptyList()
         val count = result?.count ?: 0
         return transactionsList to count.toInt()
+    }
+
+    suspend fun deleteAll(userId: String): Boolean {
+        return transactions.deleteMany(Transaction::userId eq ObjectId(userId)).wasAcknowledged()
     }
 }
 

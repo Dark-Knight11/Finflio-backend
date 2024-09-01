@@ -8,6 +8,7 @@ import com.finflio.utils.responses.StatsResponse
 import com.finflio.utils.responses.TransactionResponse
 import com.finflio.utils.responses.TransactionsResponse
 import java.time.Month
+import java.time.Year
 
 class TransactionController(
     private val repository: TransactionRepository
@@ -62,13 +63,13 @@ class TransactionController(
         else TransactionsResponse.failed("No Transactions")
     }
 
-    suspend fun getFilteredTransaction(month: Month, userId: String, pageNo: Int): TransactionsResponse {
-        val response = repository.getFilteredTransaction(month, userId, pageNo)
+    suspend fun getFilteredTransaction(month: Month, year: Year, userId: String, pageNo: Int): TransactionsResponse {
+        val response = repository.getFilteredTransaction(month, year, userId, pageNo)
         return if (response.first.isNotEmpty()) TransactionsResponse.success(
-            response.first,
-            "Successful",
-            response.second,
-            response.third
+            transactions = response.first,
+            message = "Successful",
+            pageCount = response.second,
+            monthTotal = response.third
         )
         else TransactionsResponse.failed("No Transactions")
     }
@@ -91,5 +92,12 @@ class TransactionController(
         return if (response) TransactionsResponse.success(newList, "Successful", 0)
         else TransactionsResponse.failed(FailureMessages.MESSAGE_FAILED)
 
+    }
+
+    suspend fun deleteAll(userId: String): TransactionResponse {
+        val response = repository.deleteAll(userId)
+        return if (response)
+            TransactionResponse.success(message = "Deleted Successfully")
+        else TransactionResponse.failed(FailureMessages.MESSAGE_FAILED)
     }
 }

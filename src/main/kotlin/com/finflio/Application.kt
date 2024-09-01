@@ -6,7 +6,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 
 fun main() {
-    embeddedServer(Netty, port = 8080, host = "0.0.0.0", module = Application::module)
+    embeddedServer(Netty, port = (System.getenv("PORT")?:"5000").toInt(), host = "0.0.0.0", module = Application::module)
         .start(wait = true)
 }
 

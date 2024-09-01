@@ -12,7 +12,9 @@ import io.ktor.server.plugins.*
 import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
+import java.time.LocalDate
 import java.time.Month
+import java.time.Year
 
 fun Route.TransactionRoute(transactionController: TransactionController) {
 
@@ -72,8 +74,10 @@ fun Route.TransactionRoute(transactionController: TransactionController) {
                 val page = call.parameters["page"] ?: kotlin.run {
                     throw BadRequestException("Page no is missing")
                 }
+                val year = call.parameters["year"]?.toInt() ?: LocalDate.now().year
                 val response = transactionController.getFilteredTransaction(
                     Month.valueOf(month),
+                    Year.of(year),
                     principal.userId,
                     page.toInt()
                 )
@@ -112,6 +116,13 @@ fun Route.TransactionRoute(transactionController: TransactionController) {
                 val principal =
                     call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
                 val response = transactionController.postAll(request, principal.userId)
+                call.respond(HttpStatusCode.OK, response)
+            }
+
+            delete("/all") {
+                val principal =
+                    call.principal<UserPrincipal>() ?: throw BadRequestException(FailureMessages.MESSAGE_FAILED)
+                val response = transactionController.deleteAll(principal.userId)
                 call.respond(HttpStatusCode.OK, response)
             }
         }
